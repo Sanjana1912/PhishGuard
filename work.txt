@@ -64,3 +64,12 @@ above steps are when u r doing it for first time,if u want to reopen project,jus
 venv\Scripts\activate  //in root directory 
 cd backend
 uvicorn app.main:app --reload  //auto reloads when code changes,dont need to do again and again
+
+
+17/05   4:51pm 
+
+backend/ml
+This folder contains:
+- phishing_detector_enhanced.pkl
+The model was trained using the malicious_phish.csv dataset
+with XGBoost as the final selected classifier.
