@@ -61,7 +61,7 @@ def calculate_risk(vt: dict, urlhaus: dict, whois: dict, typo: dict, ml: dict = 
     # ── VirusTotal (0-30 with ML, 0-40 without) ───────────
     vt_weight = 30 if ml_ready else 40
     vt_malicious = vt.get("malicious_count", 0)
-    vt_total = vt.get("total_vendors", 1)
+    vt_total = max(vt.get("total_vendors", 1), 1)
     vt_ratio = vt_malicious / vt_total
     vt_points = min(vt_ratio * vt_weight, vt_weight)
     score += vt_points
@@ -109,9 +109,9 @@ def calculate_risk(vt: dict, urlhaus: dict, whois: dict, typo: dict, ml: dict = 
     final_score = min(int(score), 100)
 
     # ── Risk level ────────────────────────────────────────
-    if final_score >= 75:
+    if final_score >= 75 or ml.get("ml_score", 0) >= 0.9:
         level = "CRITICAL"
-    elif final_score >= 50:
+    elif final_score >= 50 or ml.get("ml_score", 0) >= 0.8:
         level = "HIGH"
     elif final_score >= 25:
         level = "MEDIUM"
@@ -120,11 +120,16 @@ def calculate_risk(vt: dict, urlhaus: dict, whois: dict, typo: dict, ml: dict = 
 
     explanation = ". ".join(
         reasons) if reasons else "No major threats detected"
-
+    is_phishing = (
+        final_score >= 50
+        or ml.get("ml_score", 0) >= 0.8
+        or vt.get("malicious_count", 0) >= 5
+    )
     return {
         "score": final_score,
         "level": level,
-        "prediction": "phishing" if final_score >= 50 else "safe",
+        # "prediction": "phishing" if final_score >= 50 else "safe",
+        "prediction": "phishing" if is_phishing else "safe",
         "explanation": explanation,
         "ml_used": ml_ready
     }

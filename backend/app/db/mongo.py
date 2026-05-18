@@ -2,6 +2,7 @@
 # MongoDB connection and all database functions
 
 import motor.motor_asyncio
+from bson import ObjectId
 from app.core.config import MONGO_URI, DB_NAME
 
 client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URI)
@@ -10,21 +11,40 @@ scans_collection = db["scans"]
 users_collection = db["users"]
 
 
+def serialize_doc(doc: dict) -> dict:
+    """
+    MongoDB adds _id field with ObjectId type.
+    FastAPI can't serialize ObjectId to JSON — so we remove it.
+    """
+    if doc and "_id" in doc:
+        del doc["_id"]
+    return doc
+
+
 async def save_scan(scan_data: dict):
     """Save a scan result to MongoDB."""
+    scan_data.pop("_id", None)
     await scans_collection.insert_one(scan_data)
 
 
 async def get_recent_scans(limit: int = 20, user_id=None):
-    """Get the most recent scans, optionally filtered by user."""
-    query = {"user_id": user_id} if user_id else {}
-    cursor = scans_collection.find(query, {"_id": 0}).sort("timestamp", -1).limit(limit)
+    query = {}
+    if user_id:
+        query["user_id"] = user_id
+
+    cursor = scans_collection.find(
+        query,
+        {"_id": 0}  # exclude _id from results
+    ).sort("timestamp", -1).limit(limit)
     return await cursor.to_list(length=limit)
 
 
 async def get_scan_by_id(scan_id: str):
-    """Get one specific scan by its ID."""
-    return await scans_collection.find_one({"scan_id": scan_id}, {"_id": 0})
+    doc = await scans_collection.find_one(
+        {"scan_id": scan_id},
+        {"_id": 0}  # exclude _id from results
+    )
+    return serialize_doc(doc) if doc else None
 
 
 async def get_user_stats(user_id: str):

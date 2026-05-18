@@ -1,25 +1,25 @@
 # app/routers/scan.py
 # Handles POST /api/scan
-
-from fastapi import APIRouter, Request, Depends
-from slowapi.util import get_remote_address
-from slowapi import Limiter
-from datetime import datetime, timezone
-import uuid
-import asyncio
-
-from app.models.schemas import ScanRequest
-from app.core.risk_engine import calculate_risk
-from app.services.virustotal import check_virustotal
-from app.services.urlhaus import check_urlhaus
-from app.services.whois_dns import get_whois_dns
-from app.services.deobfuscator import deobfuscate_url
-from app.services.typosquatch import check_typosquatting
-from app.db.mongo import save_scan
-from app.core.security import get_current_user
-from app.ml.predictor import predict
-from app.ml.ml_utils import normalize_ml_result
 from app.db.scan_serialize import enrich_scan_ml_fields
+from app.ml.ml_utils import normalize_ml_result
+from app.ml.predictor import predict
+from app.core.security import get_current_user
+from app.db.mongo import save_scan
+from app.services.typosquatch import check_typosquatting
+from app.services.deobfuscator import deobfuscate_url
+from app.services.whois_dns import get_whois_dns
+from app.services.urlhaus import check_urlhaus
+from app.services.virustotal import check_virustotal
+from app.core.risk_engine import calculate_risk
+from app.models.schemas import ScanRequest
+import asyncio
+import uuid
+from datetime import datetime, timezone
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from fastapi import APIRouter, Request, Depends
+import copy
+
 
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
@@ -86,6 +86,6 @@ async def scan_url(
     }
 
     payload = enrich_scan_ml_fields(payload)
-    await save_scan(payload)
-
+    # await save_scan(payload)
+    await save_scan(copy.deepcopy(payload))
     return payload
