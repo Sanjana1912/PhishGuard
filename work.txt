@@ -55,7 +55,7 @@ I have sent you the .env API KEYS urls in whatsapp group
 
 uvicorn app.main:app --reload
 
-http://127.0.0.1:8000/docs    this is where you can upload any url and check the score and all
+http://127.0.0.1:8000/docs    this is where you can post any url and check the score and all
 
 
 

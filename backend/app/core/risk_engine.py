@@ -1,5 +1,7 @@
 # backend/app/core/risk_engine.py
 # Updated to include ML score in the weighted risk calculation
+import tldextract
+
 
 def calculate_risk(vt: dict, urlhaus: dict, whois: dict, typo: dict, ml: dict = None) -> dict:
     """
@@ -20,22 +22,42 @@ def calculate_risk(vt: dict, urlhaus: dict, whois: dict, typo: dict, ml: dict = 
     - Typosquatting     : 15 pts
     - DNS flags         : 10 pts
     """
+    # ── Whitelist — well-known legitimate domains ──────────
+    # These are so established that ML false positives should be overridden
+    domain = whois.get("domain", "")
+    WHITELIST = [
+        "google.com", "youtube.com", "facebook.com", "amazon.com",
+        "microsoft.com", "apple.com", "twitter.com", "instagram.com",
+        "linkedin.com", "github.com", "wikipedia.org", "reddit.com",
+        "netflix.com", "whatsapp.com", "yahoo.com", "bing.com"
+    ]
+    if any(domain.endswith(w) for w in WHITELIST):
+        return {
+            "score": 0,
+            "level": "LOW",
+            "prediction": "safe",
+            "explanation": "No major threats detected",
+            "ml_used": False
+        }
 
     score = 0
     reasons = []
     ml = ml or {}
-
     # ── ML Score (0-30 points) ─────────────────────────────
     ml_ready = ml.get("ml_ready", False)
-    ml_score = ml.get("ml_score", 0.0)  # 0.0 to 1.0
+    ml_score = ml.get("ml_score", 0.0)
 
     if ml_ready:
-        ml_points = ml_score * 30  # scale 0-1 to 0-30
-        score += ml_points
-        if ml_score >= 0.7:
+        # Only add ML points if confidence is HIGH (>= 0.75)
+        # This reduces false positives like google.com
+        if ml_score >= 0.75:
+            ml_points = ml_score * 30
+            score += ml_points
             reasons.append(
                 f"ML model flagged as phishing ({ml.get('ml_confidence')}% confidence)")
-
+        elif ml_score >= 0.5:
+            # Medium confidence — add half points, don't add to explanation
+            score += ml_score * 15
     # ── VirusTotal (0-30 with ML, 0-40 without) ───────────
     vt_weight = 30 if ml_ready else 40
     vt_malicious = vt.get("malicious_count", 0)
