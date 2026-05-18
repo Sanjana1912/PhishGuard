@@ -37,7 +37,6 @@ class URLFeatureExtractor:
             'credit', 'debit', 'card', 'bank', 'payment', 'transaction',
             'customer', 'support', 'urgent', 'suspended', 'limited', 'action'
         ]
-
         self.brand_names = [
             'amazon', 'paypal', 'apple', 'microsoft', 'google', 'facebook',
             'twitter', 'instagram', 'netflix', 'ebay', 'walmart', 'bank',
@@ -56,16 +55,13 @@ class URLFeatureExtractor:
             url = str(url).strip()
             if not url or url == 'nan' or len(url) < 3:
                 return self._get_empty_features()
-
             # Add protocol if missing
             if not url.startswith('http'):
                 url = 'http://' + url
-
             # === BASIC URL PROPERTIES ===
             features['url_length'] = len(url)
             features['has_https'] = 1 if url.startswith('https') else 0
             features['has_http'] = 1 if url.startswith('http') else 0
-
             # Parse URL
             parsed = urlparse(url)
             domain = parsed.netloc.lower()
@@ -77,7 +73,6 @@ class URLFeatureExtractor:
             features['domain_entropy'] = self._calculate_entropy(domain)
             features['domain_has_numbers'] = 1 if any(
                 c.isdigit() for c in domain) else 0
-
             # === SUBDOMAIN ANALYSIS ===
             subdomains = domain.split('.')
             features['subdomain_count'] = len(subdomains) - 1
@@ -91,7 +86,6 @@ class URLFeatureExtractor:
             else:
                 features['avg_subdomain_length'] = 0
                 features['subdomain_length_variance'] = 0
-
             # === TLD ANALYSIS ===
             tld = subdomains[-1] if subdomains else ''
             features['tld_length'] = len(tld)
@@ -105,7 +99,6 @@ class URLFeatureExtractor:
                 brand for brand in self.brand_names if brand in domain_lower]
             features['contains_brand_name'] = 1 if brand_matches else 0
             features['brand_name_count'] = len(brand_matches)
-
             max_similarity = 0
             for brand in self.brand_names:
                 similarity = self._string_similarity(domain_lower, brand)
@@ -121,7 +114,6 @@ class URLFeatureExtractor:
                 parse_qs(query)) if query else 0
             features['has_suspicious_query'] = self._check_suspicious_query(
                 query)
-
             # === SPECIAL CHARACTERS ===
             features['hyphen_count'] = url.count('-')
             features['underscore_count'] = url.count('_')
@@ -152,7 +144,6 @@ class URLFeatureExtractor:
             keyword_matches = [
                 kw for kw in self.suspicious_keywords if kw in url_lower]
             features['suspicious_keyword_count'] = len(keyword_matches)
-
             features['has_login'] = 1 if 'login' in url_lower else 0
             features['has_verify'] = 1 if 'verify' in url_lower else 0
             features['has_update'] = 1 if 'update' in url_lower else 0
@@ -297,7 +288,9 @@ class URLFeatureExtractor:
         """Check for suspicious query parameters"""
         if not query:
             return 0
+
         suspicious_params = ['redirect', 'url',
                              'http', 'login', 'email', 'password']
+
         query_lower = query.lower()
         return 1 if any(param in query_lower for param in suspicious_params) else 0
