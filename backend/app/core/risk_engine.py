@@ -88,6 +88,28 @@ def calculate_risk(vt: dict, urlhaus: dict, whois: dict, typo: dict, ml: dict = 
         reasons.append("URL found in URLHaus malicious database")
 
     # ── Typosquatting (0-10 with ML, 0-15 without) ────────
+    suspicious_keywords = [
+        "login",
+        "verify",
+        "secure",
+        "account",
+        "bank",
+        "paypal",
+        "security",
+    ]
+
+    url_lower = typo.get("scanned_domain", "").lower()
+
+    keyword_hits = sum(
+        1 for word in suspicious_keywords if word in url_lower
+    )
+
+    if keyword_hits >= 2:
+        score += 25
+    reasons.append("Suspicious phishing keywords detected in URL")
+    if url_lower.endswith(".xyz"):
+        score += 10
+    reasons.append("High-risk TLD detected (.xyz)")
     typo_weight = 10 if ml_ready else 15
     typo_is_squat = typo.get("is_typosquat", False)
     typo_distance = typo.get("distance", 99)
