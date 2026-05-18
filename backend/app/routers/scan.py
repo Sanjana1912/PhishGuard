@@ -18,6 +18,7 @@ from datetime import datetime, timezone
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from fastapi import APIRouter, Request, Depends
+from app.core.security import get_current_user
 import copy
 
 
@@ -30,7 +31,7 @@ limiter = Limiter(key_func=get_remote_address)
 async def scan_url(
     request: Request,
     body: ScanRequest,
-    current_user: dict = Depends(get_current_user),
+    # current_user: dict = Depends(get_current_user),
 ):
     """Main scan endpoint — ML + CTI pipeline. Returns plain JSON with guaranteed ML fields."""
     clean_url = await deobfuscate_url(body.url)
@@ -65,7 +66,7 @@ async def scan_url(
 
     payload = {
         "scan_id": scan_id,
-        "user_id": current_user["user_id"],
+        # "user_id": current_user["user_id"],
         "url": body.url,
         "risk_score": risk_data["score"],
         "risk_level": risk_data["level"],
