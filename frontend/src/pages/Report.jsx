@@ -18,7 +18,10 @@ function Report() {
     }
 
     API.get(`/api/report/${scan_id}`)
-      .then((res) => setReport(res.data))
+      .then((res) => {
+           console.log("REPORT DATA:", res.data)
+           setReport(res.data)
+})
       .catch((err) => {
         const status = err.response?.status
         if (status === 404) {
