@@ -31,7 +31,7 @@ limiter = Limiter(key_func=get_remote_address)
 async def scan_url(
     request: Request,
     body: ScanRequest,
-    current_user: dict = Depends(get_current_user),
+    #current_user: dict = Depends(get_current_user),
 ):
     """Main scan endpoint — ML + CTI pipeline. Returns plain JSON with guaranteed ML fields."""
     clean_url = await deobfuscate_url(body.url)
@@ -66,7 +66,6 @@ async def scan_url(
 
     payload = {
         "scan_id": scan_id,
-         "user_id": current_user["user_id"],
         "url": body.url,
         "risk_score": risk_data["score"],
         "risk_level": risk_data["level"],
@@ -86,7 +85,7 @@ async def scan_url(
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
-    #payload = enrich_scan_ml_fields(payload)
+    payload = enrich_scan_ml_fields(payload)
     # await save_scan(payload)
     await save_scan(copy.deepcopy(payload))
     return payload
