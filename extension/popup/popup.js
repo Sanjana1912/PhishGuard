@@ -2,7 +2,7 @@
 // Runs every time user clicks the extension icon
 // Gets current tab URL → calls backend → fills in the UI
 
-const BACKEND_URL = "http://127.0.0.1:8001"; // change to production URL when deployed
+const BACKEND_URL = "http://127.0.0.1:8000"; // change to production URL when deployed
 const DASHBOARD_URL = "http://localhost:5173"; // your React dashboard URL
 
 // ── Grab all the DOM elements we'll update ──────────────
@@ -46,9 +46,13 @@ async function main() {
         domainName.textContent = domain;
 
         // Step 2 — call your FastAPI backend
+        const token= localStorage.getItem("phishguard_token");
+
         const response = await fetch(`${BACKEND_URL}/api/scan`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json",
+                       "Authorization": `Bearer ${token}`
+              },
             body: JSON.stringify({ url }),
         });
 

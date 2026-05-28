@@ -3,7 +3,7 @@
 from app.db.scan_serialize import enrich_scan_ml_fields
 from app.ml.ml_utils import normalize_ml_result
 from app.ml.predictor import predict
-from app.core.security import get_current_user
+from app.core.security import get_optional_user
 from app.db.mongo import save_scan
 from app.services.typosquatch import check_typosquatting
 from app.services.deobfuscator import deobfuscate_url
@@ -18,7 +18,6 @@ from datetime import datetime, timezone
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from fastapi import APIRouter, Request, Depends
-from app.core.security import get_current_user
 import copy
 
 
@@ -31,7 +30,7 @@ limiter = Limiter(key_func=get_remote_address)
 async def scan_url(
     request: Request,
     body: ScanRequest,
-    #current_user: dict = Depends(get_current_user),
+    current_user: dict = Depends(get_optional_user),
 ):
     """Main scan endpoint — ML + CTI pipeline. Returns plain JSON with guaranteed ML fields."""
     clean_url = await deobfuscate_url(body.url)
@@ -66,6 +65,7 @@ async def scan_url(
 
     payload = {
         "scan_id": scan_id,
+        "user_id": current_user["user_id"] if current_user else None,
         "url": body.url,
         "risk_score": risk_data["score"],
         "risk_level": risk_data["level"],
